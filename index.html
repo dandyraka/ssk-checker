@@ -63,7 +63,7 @@
 							if (response.success) {
 								successful.push(code);
 							} else {
-								failed.push(code);
+								failed.push(`${code} >> ${response.data.message}`);
 							}
 						}).fail(() => {
 							failed.push(code);
