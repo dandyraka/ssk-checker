@@ -57,27 +57,32 @@
 					const successful = [];
 
 					vouchers.forEach(code => {
-						$.ajax({
-							url: 'https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate',
+						fetch('https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate', {
 							method: 'POST',
-							contentType: 'application/json',
-							data: JSON.stringify({
+							mode: 'cors',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
 								query: {
 									serial_number: [code],
 									browser_session: uuidv4(),
 									lang: 'id'
 								}
 							})
-						}).done(response => {
-							if (response.success) {
+						})
+						.then(response => response.json())
+						.then(data => {
+							if (data.success) {
 								successful.push(code);
 							} else {
-								failed.push(`${code} >> ${response.data.message}`);
+								failed.push(`${code} >> ${data.data.message}`);
 							}
-						}).fail(() => {
-							failed.push(code);
-						}).always(() => {
-							// Perbarui tampilan hasil setiap kali request selesai
+						})
+						.catch(() => {
+							failed.push(`${code} >> Gagal cek kode`);
+						})
+						.finally(() => {
 							$('#failedCodes').val(failed.join('\n'));
 							$('#successfulCodes').val(successful.join('\n'));
 							$('#failedCount').text(failed.length);
@@ -85,6 +90,7 @@
 						});
 					});
 				});
+
 
 				$('#copyFailedButton').click(function() {
 					const failedText = $('#failedCodes').val();
