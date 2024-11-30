@@ -50,68 +50,45 @@
 
 				$('#voucherInput').on('input', updateButtonText);
 
-				$('#validateButton').click(async function () {
+				$('#validateButton').click(function() {
 					const input = $('#voucherInput').val();
 					const vouchers = input.split('\n').map(code => code.trim()).filter(code => code);
 					const failed = [];
 					const successful = [];
 
-					// Batasi permintaan paralel
-					const maxConcurrent = 5;
-					const pool = []; // Untuk melacak permintaan aktif
-
-					async function validateCode(code) {
-						try {
-							const response = await fetch('https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate', {
-								method: 'POST',
-								mode: 'cors',
-								headers: {
-									'Content-Type': 'application/json'
-								},
-								body: JSON.stringify({
-									query: {
-										serial_number: [code],
-										browser_session: uuidv4(),
-										lang: 'id'
-									}
-								})
-							});
-							const data = await response.json();
+					vouchers.forEach(code => {
+						fetch('https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate', {
+							method: 'POST',
+							mode: 'cors',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								query: {
+									serial_number: [code],
+									browser_session: uuidv4(),
+									lang: 'id'
+								}
+							})
+						})
+						.then(response => response.json())
+						.then(data => {
 							if (data.success) {
 								successful.push(code);
 							} else {
 								failed.push(`${code} >> ${data.data.message}`);
 							}
-						} catch (error) {
+						})
+						.catch(() => {
 							failed.push(`${code} >> Gagal cek kode`);
-						}
-
-						// Perbarui UI setelah setiap permintaan selesai
-						$('#failedCodes').val(failed.join('\n'));
-						$('#successfulCodes').val(successful.join('\n'));
-						$('#failedCount').text(failed.length);
-						$('#successfulCount').text(successful.length);
-					}
-
-					for (const code of vouchers) {
-						const task = validateCode(code); // Mulai validasi kode
-						pool.push(task); // Tambahkan ke pool
-
-						// Jika pool penuh, tunggu salah satu selesai
-						if (pool.length >= maxConcurrent) {
-							await Promise.race(pool);
-							pool.splice(pool.findIndex(p => p === task), 1); // Hapus tugas yang selesai
-						}
-					}
-
-					// Tunggu semua permintaan selesai
-					await Promise.all(pool);
-
-					// Final update jika diperlukan
-					$('#failedCodes').val(failed.join('\n'));
-					$('#successfulCodes').val(successful.join('\n'));
-					$('#failedCount').text(failed.length);
-					$('#successfulCount').text(successful.length);
+						})
+						.finally(() => {
+							$('#failedCodes').val(failed.join('\n'));
+							$('#successfulCodes').val(successful.join('\n'));
+							$('#failedCount').text(failed.length);
+							$('#successfulCount').text(successful.length);
+						});
+					});
 				});
 
 
