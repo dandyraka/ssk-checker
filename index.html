@@ -42,13 +42,22 @@
 			}
 
 			$(document).ready(function() {
+				const updateButtonText = () => {
+					const input = $('#voucherInput').val();
+					const count = input.split('\n').map(code => code.trim()).filter(code => code).length;
+					$('#validateButton').text(`Check (${count} data)`);
+				};
+
+				$('#voucherInput').on('input', updateButtonText);
+
 				$('#validateButton').click(function() {
 					const input = $('#voucherInput').val();
 					const vouchers = input.split('\n').map(code => code.trim()).filter(code => code);
 					const failed = [];
 					const successful = [];
-					const requests = vouchers.map(code => {
-						return $.ajax({
+
+					vouchers.forEach(code => {
+						$.ajax({
 							url: 'https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate',
 							method: 'POST',
 							contentType: 'application/json',
@@ -67,13 +76,13 @@
 							}
 						}).fail(() => {
 							failed.push(code);
+						}).always(() => {
+							// Perbarui tampilan hasil setiap kali request selesai
+							$('#failedCodes').val(failed.join('\n'));
+							$('#successfulCodes').val(successful.join('\n'));
+							$('#failedCount').text(failed.length);
+							$('#successfulCount').text(successful.length);
 						});
-					});
-					$.when.apply($, requests).always(() => {
-						$('#failedCodes').val(failed.join('\n'));
-						$('#successfulCodes').val(successful.join('\n'));
-						$('#failedCount').text(failed.length);
-						$('#successfulCount').text(successful.length);
 					});
 				});
 
@@ -94,6 +103,8 @@
 						alert('Gagal menyalin kode valid!');
 					});
 				});
+
+				updateButtonText();
 			});
 		</script>
 	</body>
