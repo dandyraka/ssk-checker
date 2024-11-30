@@ -49,7 +49,7 @@
 					const successful = [];
 					const requests = vouchers.map(code => {
 						return $.ajax({
-							url: 'https://cors-anywhere.herokuapp.com/https://ssk.jkt48.com/2024/api/serial-validate',
+							url: 'https://cors.luckydesigner.workers.dev/?https://ssk.jkt48.com/2024/api/serial-validate',
 							method: 'POST',
 							contentType: 'application/json',
 							data: JSON.stringify({
